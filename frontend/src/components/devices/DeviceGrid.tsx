@@ -1,20 +1,23 @@
 import React from 'react';
-import { PowerSwitch } from '../widgets/PowerSwitch';
-import { ThermostatWidget } from '../widgets/ThermostatWidget';
-import { ServoWidget } from '../widgets/ServoWidget';
 import { useMQTT } from '../../hooks/useMQTT';
 import { AlertCircle } from 'lucide-react';
+import { DeviceCard } from '../DeviceCard';
+import { PhSensorCard, TurbiditySensorCard, ConductivitySensorCard } from './WaterSensorCards';
 
 export const DeviceGrid: React.FC = () => {
   const { devices, isConnected, toggleRelay, setServoAngle } = useMQTT();
 
-  if (!isConnected) {
+  // Fallback: If we have devices, we assume we are (or were) connected enough to show them.
+  // This prevents the whole UI from vanishing during a micro-disconnect.
+  const effectiveIsConnected = isConnected || devices.length > 0;
+
+  if (!effectiveIsConnected) {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-red-500/10 rounded-xl border border-red-500/20">
         <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <h3 className="text-xl font-bold text-red-500 mb-2">Error de Conexión</h3>
+        <h3 className="text-xl font-bold text-red-500 mb-2">Conectando...</h3>
         <p className="text-gray-400 text-center">
-          No se pudo conectar al broker MQTT. Por favor, verifica tu conexión.
+          Estableciendo conexión con el broker MQTT...
         </p>
       </div>
     );
@@ -34,53 +37,31 @@ export const DeviceGrid: React.FC = () => {
   // Filtrar dispositivos duplicados por ID
   const uniqueDevices = Array.from(new Map(devices.map(device => [device.id, device])).values());
 
-  const renderDevice = (device: any) => {
-    switch (device.type) {
-      case 'relay':
-        return (
-          <PowerSwitch
-            key={device.id}
-            deviceId={device.id}
-            isOn={device.data.relayState}
-            onChange={(state) => toggleRelay(device.id, state)}
-            label={device.name}
-            ipAddress={device.data.ipAddress || 'Unknown'}
-            isOnline={device.isOnline}
-          />
-        );
-      case 'dht':
-        return (
-          <ThermostatWidget
-            key={device.id}
-            deviceName={device.name}
-            deviceId={device.id}
-            category={device.category}
-            ipAddress={device.data.ipAddress || 'Unknown'}
-            temperature={device.data.temperature}
-            humidity={device.data.humidity}
-            isOnline={device.isOnline}
-          />
-        );
-      case 'servo':
-        return (
-          <ServoWidget
-            key={device.id}
-            deviceName={device.name}
-            category={device.category}
-            ipAddress={device.data.ipAddress || 'Unknown'}
-            angle={device.data.servoAngle}
-            isOnline={device.isOnline}
-            onChange={(angle) => setServoAngle(device.id, angle)}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {uniqueDevices.map(device => renderDevice(device))}
+      {uniqueDevices.flatMap(device => {
+        // Si es el dispositivo de calidad del agua, devolvemos 3 tarjetas separadas
+        if (device.data.ph !== undefined || device.category === 'Water Quality') {
+           return [
+             <PhSensorCard key={`${device.id}-ph`} device={device} />,
+             <TurbiditySensorCard key={`${device.id}-turb`} device={device} />,
+             <ConductivitySensorCard key={`${device.id}-cond`} device={device} />
+           ];
+        }
+
+        // Para cualquier otro dispositivo, devolvemos 1 tarjeta normal en un array
+        return [
+          <DeviceCard 
+            key={device.id} 
+            device={device} 
+            onToggleRelay={(id) => {
+               const current = devices.find(d => d.id === id)?.data.relayState;
+               toggleRelay(id, !current);
+            }}
+            onServoChange={setServoAngle}
+          />
+        ];
+      })}
     </div>
   );
 };

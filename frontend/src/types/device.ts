@@ -11,6 +11,11 @@ export interface Device {
     servoAngle?: number;
     cpuFreq?: number;
     wifiStrength?: number;
+    ipAddress?: string;
     uptime?: number;
+    // Water Quality
+    ph?: number;
+    turbidity?: number;
+    conductivity?: boolean;
   };
 }

@@ -14,6 +14,7 @@ export default defineConfig({
     include: ['mqtt']
   },
   server: {
+    host: true, // Expose to network
     watch: {
       usePolling: true,
     },

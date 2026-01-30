@@ -52,7 +52,7 @@ wss.on('connection', (ws) => {
   ws.on('message', (data) => {
     try {
       const message = JSON.parse(data);
-      
+
       if (message.type === 'command') {
         serverMqtt.publish(
           `iot/device/${message.deviceId}/command`,
@@ -100,7 +100,7 @@ app.get('/health', (req, res) => {
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.HOST || '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
   console.log(`Servidor ejecutándose en http://${HOST}:${PORT}`);

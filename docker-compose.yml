@@ -4,16 +4,20 @@ services:
   frontend:
     build: 
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: iot_frontend
     ports:
       - "5173:5173"
     environment:
-      - VITE_MQTT_BROKER=ws://broker.hivemq.com:8000/mqtt
+      - VITE_API_URL=http://localhost:3000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     networks:
       - iot_network
     depends_on:
       - backend
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
 
   backend:
     build: 
@@ -23,14 +27,19 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - MYSQL_HOST=mysql
       - MYSQL_USER=root
       - MYSQL_PASSWORD=sosamejia
       - MYSQL_DATABASE=iot_db
-      - MQTT_BROKER=mqtt://santiago:sosamejia@192.168.1.5:1883
+      - MQTT_BROKER=mqtt://santiago:sosamejia@iot_emqx:1883
+      - HOST=0.0.0.0
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     networks:
       - iot_network
+    command: sh -c "npm install && npm run dev"
 
   mysql:
     image: mysql:latest

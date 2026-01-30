@@ -5,6 +5,7 @@ import { Device } from '../types';
 import { RelaySwitch } from './RelaySwitch';
 import { ServoControl } from './ServoControl';
 import { TemperatureGauge } from './TemperatureGauge';
+import { PHGauge, TurbidityGauge, ConductivityIndicator } from './widgets/WaterQualityWidgets';
 
 interface DeviceCardProps {
   device: Device;
@@ -111,6 +112,27 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           </div>
         </div>
       </div>
+      
+      {/* Water Quality Metrics */}
+      {(device.data.ph !== undefined || device.data.turbidity !== undefined) && (
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {device.data.ph !== undefined && (
+             <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700/50 flex flex-col items-center justify-center">
+               <PHGauge value={device.data.ph} size={90} />
+             </div>
+          )}
+          {device.data.turbidity !== undefined && (
+             <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700/50 flex flex-col items-center justify-center">
+               <TurbidityGauge value={device.data.turbidity} size={90} />
+             </div>
+          )}
+          {device.data.conductivity !== undefined && (
+             <div className="col-span-2 flex justify-center mt-2">
+               <ConductivityIndicator isConductive={device.data.conductivity} />
+             </div>
+          )}
+        </div>
+      )}
 
       {/* Controls */}
       <div className="space-y-4">
